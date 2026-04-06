@@ -1,36 +1,21 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SDL Daily Inbound-Outbound Tracker
 
-## Getting Started
+A full-stack web application designed to streamline daily financial tracking. This application helps users efficiently monitor, log, and analyze their daily inbound and outbound cash flows in both **Myanmar Kyat (MMK)** and **Thai Baht (THB)**.
 
-First, run the development server:
+## Purpose
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+The primary goal of this project is to provide a clean, fast, and reliable environment for recording daily financial transactions. By separating transactions strictly into Inbound (In) and Outbound (Out) states across dual currencies, the app ensures clear visibility into day-to-day liquidity and balances.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Key features include:
+- **Dual-Currency Tracking**: Seamlessly switch contexts between MMK and THB without dealing with convoluted multi-currency logic in a single view.
+- **Dynamic Dashboard**: Auto-calculated monthly and yearly aggregations, generating clear financial summaries and tables over time.
+- **Modern UI/UX**: Polished, responsive user interface utilizing Tailwind CSS, custom components, and smooth micro-animations.
+- **Secure Architecture**: Database interactions are securely managed via Prisma, with robust authentication protocols protecting sensitive financial data.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Technology Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Framework**: Next.js (React)
+- **Database ORM**: Prisma (PostgreSQL)
+- **Styling**: Tailwind CSS  
+- **Typography**: Poppins (Google Fonts)
+- **Icons**: Lucide React

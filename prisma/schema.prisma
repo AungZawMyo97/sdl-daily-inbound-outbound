@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Currency {
+  MMK
+  THB
+}
+
+enum TransactionType {
+  IN
+  OUT
+}
+
+model Transaction {
+  id          Int             @id @default(autoincrement())
+  amount      Decimal         @db.Decimal(18, 2)
+  type        TransactionType
+  currency    Currency
+  description String?
+  date        DateTime        @default(now()) @db.Date
+  createdAt   DateTime        @default(now())
+
+  @@index([currency])
+  @@index([date])
+  @@index([currency, date])
+}
