@@ -70,7 +70,9 @@ export function ReportDownload() {
       <div className="flex gap-2">
         <Select value={month} onValueChange={(v) => v && setMonth(v)}>
           <SelectTrigger className="flex-1">
-            <SelectValue placeholder="Month" />
+            <SelectValue placeholder="Month">
+              {MONTH_NAMES[parseInt(month) - 1]}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {MONTH_NAMES.map((name, i) => (

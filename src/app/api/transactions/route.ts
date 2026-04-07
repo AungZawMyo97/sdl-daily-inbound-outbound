@@ -42,7 +42,10 @@ export async function GET(request: Request) {
   const [transactions, totalCount, aggregates] = await Promise.all([
     prisma.transaction.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: [
+        { date: "desc" },
+        { createdAt: "desc" }
+      ],
       skip: (page - 1) * limit,
       take: limit,
     }),
@@ -116,6 +119,7 @@ export async function POST(request: Request) {
       currency,
       description: description || null,
       date: transactionDate,
+      createdAt: nowLocal(),
     },
   });
 
