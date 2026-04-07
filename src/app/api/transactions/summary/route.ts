@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { currentYear } from "@/lib/timezone";
 import { Prisma } from "@/generated/prisma/client";
 
 interface MonthlySummary {
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const year = url.searchParams.get("year") || new Date().getFullYear().toString();
+  const year = url.searchParams.get("year") || currentYear().toString();
   const yearNum = parseInt(year);
 
   const startDate = new Date(yearNum, 0, 1);

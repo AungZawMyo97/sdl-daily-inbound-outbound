@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { APP_TIMEZONE } from "@/lib/timezone";
 import ExcelJS from "exceljs";
 
 const MONTH_NAMES = [
@@ -58,7 +59,7 @@ export async function GET(request: Request) {
   // — Generated date row —
   sheet.mergeCells("A2:F2");
   const dateCell = sheet.getCell("A2");
-  dateCell.value = `Generated on ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
+  dateCell.value = `Generated on ${new Date().toLocaleDateString("en-US", { timeZone: APP_TIMEZONE, month: "long", day: "numeric", year: "numeric" })}`;
   dateCell.font = { size: 10, italic: true, color: { argb: "FF888888" } };
   dateCell.alignment = { horizontal: "center" };
   sheet.getRow(2).height = 20;
@@ -102,6 +103,7 @@ export async function GET(request: Request) {
     const dataRow = sheet.addRow([
       index + 1,
       new Date(tx.date).toLocaleDateString("en-US", {
+        timeZone: APP_TIMEZONE,
         month: "short",
         day: "numeric",
         year: "numeric",

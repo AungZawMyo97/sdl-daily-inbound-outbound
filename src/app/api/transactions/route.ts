@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { nowLocal } from "@/lib/timezone";
 import { Currency, TransactionType, Prisma } from "@/generated/prisma/client";
 
 export async function GET(request: Request) {
@@ -105,7 +106,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Amount must be a positive number" }, { status: 400 });
   }
 
-  const transactionDate = date ? new Date(date) : new Date();
+  const transactionDate = date ? new Date(date) : nowLocal();
   transactionDate.setHours(0, 0, 0, 0);
 
   const transaction = await prisma.transaction.create({
