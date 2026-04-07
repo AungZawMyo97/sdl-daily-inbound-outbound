@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { NavBar } from "@/components/nav-bar";
 import { CurrencySwitcher } from "@/components/currency-switcher";
 import { TransactionForm } from "@/components/transaction-form";
@@ -20,37 +20,76 @@ interface Transaction {
   createdAt: string;
 }
 
+const PAGE_SIZE = 10;
+
 export default function TrackerPage() {
   const [currency, setCurrency] = useState<"MMK" | "THB">("MMK");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalIn, setTotalIn] = useState(0);
+  const [totalOut, setTotalOut] = useState(0);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
-  const fetchTransactions = useCallback(async () => {
-    setLoading(true);
+  // Track current currency to avoid stale closures
+  const currencyRef = useRef(currency);
+  currencyRef.current = currency;
+
+  const fetchTransactions = useCallback(async (pageNum: number, append: boolean = false) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+
     try {
-      const res = await fetch(`/api/transactions?currency=${currency}`);
+      const res = await fetch(
+        `/api/transactions?currency=${currencyRef.current}&page=${pageNum}&limit=${PAGE_SIZE}`
+      );
       if (res.ok) {
-        const data = await res.json();
-        setTransactions(data);
+        const result = await res.json();
+        if (append) {
+          setTransactions((prev) => [...prev, ...result.data]);
+        } else {
+          setTransactions(result.data);
+        }
+        setHasMore(result.hasMore);
+        setTotalCount(result.totalCount);
+        setTotalIn(result.totalIn);
+        setTotalOut(result.totalOut);
       }
     } catch {
       toast.error("Failed to load transactions");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [currency]);
+  }, []);
 
+  // Reset and reload when currency changes
   useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
+    setPage(1);
+    setTransactions([]);
+    fetchTransactions(1, false);
+  }, [currency, fetchTransactions]);
+
+  function handleLoadMore() {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchTransactions(nextPage, true);
+  }
 
   async function handleDelete(id: number) {
     try {
       const res = await fetch(`/api/transactions/${id}`, { method: "DELETE" });
       if (res.ok) {
         toast.success("Transaction deleted");
-        fetchTransactions();
+        // Reset to page 1 and reload
+        setPage(1);
+        fetchTransactions(1, false);
       } else {
         toast.error("Failed to delete transaction");
       }
@@ -61,21 +100,17 @@ export default function TrackerPage() {
 
   function handleSuccess() {
     toast.success("Transaction added");
-    fetchTransactions();
+    // Reset to page 1 and reload so the new transaction shows at top
+    setPage(1);
+    fetchTransactions(1, false);
   }
 
   function handleEditSuccess() {
     toast.success("Transaction updated");
-    fetchTransactions();
+    // Reset to page 1 and reload
+    setPage(1);
+    fetchTransactions(1, false);
   }
-
-  const totalIn = transactions
-    .filter((t) => t.type === "IN")
-    .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-
-  const totalOut = transactions
-    .filter((t) => t.type === "OUT")
-    .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -107,7 +142,7 @@ export default function TrackerPage() {
               <CardTitle className="text-base">
                 {currency} Transactions
                 <span className="ml-2 text-sm font-normal text-muted-foreground">
-                  ({transactions.length} records)
+                  ({totalCount} records)
                 </span>
               </CardTitle>
             </CardHeader>
@@ -115,8 +150,12 @@ export default function TrackerPage() {
               <TransactionList
                 transactions={transactions}
                 loading={loading}
+                loadingMore={loadingMore}
+                hasMore={hasMore}
+                totalCount={totalCount}
                 onDelete={handleDelete}
                 onEdit={setEditingTransaction}
+                onLoadMore={handleLoadMore}
               />
             </CardContent>
           </Card>

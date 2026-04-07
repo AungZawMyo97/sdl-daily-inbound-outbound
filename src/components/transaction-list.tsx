@@ -1,6 +1,7 @@
 "use client";
 
-import { Trash2, ArrowDownLeft, ArrowUpRight, Pencil } from "lucide-react";
+import { useRef, useEffect, useCallback } from "react";
+import { Trash2, ArrowDownLeft, ArrowUpRight, Pencil, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -26,8 +27,12 @@ interface Transaction {
 interface TransactionListProps {
   transactions: Transaction[];
   loading: boolean;
+  loadingMore: boolean;
+  hasMore: boolean;
+  totalCount: number;
   onDelete: (id: number) => void;
   onEdit?: (tx: Transaction) => void;
+  onLoadMore: () => void;
 }
 
 function formatAmount(amount: string, currency: string): string {
@@ -47,7 +52,44 @@ function formatDate(dateStr: string): string {
   });
 }
 
-export function TransactionList({ transactions, loading, onDelete, onEdit }: TransactionListProps) {
+export function TransactionList({
+  transactions,
+  loading,
+  loadingMore,
+  hasMore,
+  totalCount,
+  onDelete,
+  onEdit,
+  onLoadMore,
+}: TransactionListProps) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // IntersectionObserver to trigger infinite scroll
+  const handleObserver = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      const target = entries[0];
+      if (target.isIntersecting && hasMore && !loadingMore && !loading) {
+        onLoadMore();
+      }
+    },
+    [hasMore, loadingMore, loading, onLoadMore]
+  );
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(handleObserver, {
+      root: scrollContainerRef.current,
+      rootMargin: "100px",
+      threshold: 0,
+    });
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [handleObserver]);
+
   if (loading) {
     return (
       <div className="space-y-3">
@@ -68,75 +110,97 @@ export function TransactionList({ transactions, loading, onDelete, onEdit }: Tra
   }
 
   return (
-    <div className="rounded-lg border border-border/50 overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/30">
-            <TableHead className="w-[100px]">Type</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead className="hidden sm:table-cell">Description</TableHead>
-            <TableHead className="hidden sm:table-cell">Date</TableHead>
-            <TableHead className="w-[50px]" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {transactions.map((tx) => (
-            <TableRow
-              key={tx.id}
-              className="group transition-colors hover:bg-muted/20"
-            >
-              <TableCell>
-                <Badge
-                  variant="outline"
-                  className={`gap-1 ${
-                    tx.type === "IN"
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                      : "border-rose-500/30 bg-rose-500/10 text-rose-400"
-                  }`}
-                >
-                  {tx.type === "IN" ? (
-                    <ArrowDownLeft className="h-3 w-3" />
-                  ) : (
-                    <ArrowUpRight className="h-3 w-3" />
+    <div className="space-y-2">
+      <div
+        ref={scrollContainerRef}
+        className="rounded-lg border border-border/50 overflow-auto"
+        style={{ maxHeight: "520px" }}
+      >
+        <Table>
+          <TableHeader className="sticky top-0 z-10 bg-background">
+            <TableRow className="bg-muted/30">
+              <TableHead className="w-[100px]">Type</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead className="hidden sm:table-cell">Description</TableHead>
+              <TableHead className="hidden sm:table-cell">Date</TableHead>
+              <TableHead className="w-[50px]" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {transactions.map((tx) => (
+              <TableRow
+                key={tx.id}
+                className="group transition-colors hover:bg-muted/20"
+              >
+                <TableCell>
+                  <Badge
+                    variant="outline"
+                    className={`gap-1 ${
+                      tx.type === "IN"
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                        : "border-rose-500/30 bg-rose-500/10 text-rose-400"
+                    }`}
+                  >
+                    {tx.type === "IN" ? (
+                      <ArrowDownLeft className="h-3 w-3" />
+                    ) : (
+                      <ArrowUpRight className="h-3 w-3" />
+                    )}
+                    {tx.type}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-mono font-medium">
+                  <span className={tx.type === "IN" ? "text-emerald-400" : "text-rose-400"}>
+                    {tx.type === "IN" ? "+" : "-"}{formatAmount(tx.amount, tx.currency)}
+                  </span>
+                </TableCell>
+                <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+                  {tx.description || "—"}
+                </TableCell>
+                <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+                  {formatDate(tx.date)}
+                </TableCell>
+                <TableCell className="flex justify-end gap-1">
+                  {onEdit && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onEdit(tx)}
+                      className="h-8 w-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-emerald-500"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                   )}
-                  {tx.type}
-                </Badge>
-              </TableCell>
-              <TableCell className="font-mono font-medium">
-                <span className={tx.type === "IN" ? "text-emerald-400" : "text-rose-400"}>
-                  {tx.type === "IN" ? "+" : "-"}{formatAmount(tx.amount, tx.currency)}
-                </span>
-              </TableCell>
-              <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
-                {tx.description || "—"}
-              </TableCell>
-              <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
-                {formatDate(tx.date)}
-              </TableCell>
-              <TableCell className="flex justify-end gap-1">
-                {onEdit && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => onEdit(tx)}
-                    className="h-8 w-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-emerald-500"
+                    onClick={() => onDelete(tx.id)}
+                    className="h-8 w-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
                   >
-                    <Pencil className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onDelete(tx.id)}
-                  className="h-8 w-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        {/* Sentinel element for infinite scroll */}
+        <div ref={sentinelRef} className="h-1" />
+
+        {/* Loading more indicator */}
+        {loadingMore && (
+          <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">Loading more…</span>
+          </div>
+        )}
+      </div>
+
+      {/* Record count */}
+      <p className="text-xs text-muted-foreground text-right">
+        Showing {transactions.length} of {totalCount} records
+      </p>
     </div>
   );
 }

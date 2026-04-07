@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
-import { Currency, TransactionType } from "@/generated/prisma/client";
+import { Currency, TransactionType, Prisma } from "@/generated/prisma/client";
 
 export async function GET(request: Request) {
   const session = await getSession();
@@ -13,6 +13,8 @@ export async function GET(request: Request) {
   const dateStr = url.searchParams.get("date");
   const month = url.searchParams.get("month");
   const year = url.searchParams.get("year");
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
+  const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get("limit") || "10", 10)));
 
   const where: Record<string, unknown> = {};
 
@@ -35,10 +37,28 @@ export async function GET(request: Request) {
     where.date = { gte: startDate, lt: endDate };
   }
 
-  const transactions = await prisma.transaction.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-  });
+  // Fetch paginated transactions and total count in parallel
+  const [transactions, totalCount, aggregates] = await Promise.all([
+    prisma.transaction.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.transaction.count({ where }),
+    prisma.transaction.groupBy({
+      by: ["type"],
+      where,
+      _sum: { amount: true },
+    }),
+  ]);
+
+  const totalIn = aggregates
+    .find((a) => a.type === "IN")
+    ?._sum.amount;
+  const totalOut = aggregates
+    .find((a) => a.type === "OUT")
+    ?._sum.amount;
 
   const serialized = transactions.map((t) => ({
     ...t,
@@ -47,7 +67,13 @@ export async function GET(request: Request) {
     createdAt: t.createdAt.toISOString(),
   }));
 
-  return Response.json(serialized);
+  return Response.json({
+    data: serialized,
+    totalCount,
+    hasMore: page * limit < totalCount,
+    totalIn: totalIn ? new Prisma.Decimal(totalIn).toNumber() : 0,
+    totalOut: totalOut ? new Prisma.Decimal(totalOut).toNumber() : 0,
+  });
 }
 
 export async function POST(request: Request) {
