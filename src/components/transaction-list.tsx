@@ -160,25 +160,27 @@ export function TransactionList({
                 <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
                   {formatDate(tx.date)}
                 </TableCell>
-                <TableCell className="flex justify-end gap-1">
-                  {onEdit && (
+                <TableCell>
+                  <div className="flex justify-end gap-1">
+                    {onEdit && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEdit(tx)}
+                        className="h-8 w-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-emerald-500"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => onEdit(tx)}
-                      className="h-8 w-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-emerald-500"
+                      onClick={() => onDelete(tx.id)}
+                      className="h-8 w-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onDelete(tx.id)}
-                    className="h-8 w-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
