@@ -167,7 +167,7 @@ export function TransactionList({
                         variant="ghost"
                         size="icon"
                         onClick={() => onEdit(tx)}
-                        className="h-8 w-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-emerald-500"
+                        className="h-8 w-8 opacity-100 min-[1390px]:opacity-0 min-[1390px]:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-emerald-500"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -176,7 +176,7 @@ export function TransactionList({
                       variant="ghost"
                       size="icon"
                       onClick={() => onDelete(tx.id)}
-                      className="h-8 w-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                      className="h-8 w-8 opacity-100 min-[1390px]:opacity-0 min-[1390px]:group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
