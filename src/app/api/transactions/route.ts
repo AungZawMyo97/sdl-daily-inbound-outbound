@@ -119,7 +119,7 @@ export async function POST(request: Request) {
       currency,
       description: description || null,
       date: transactionDate,
-      createdAt: nowLocal(),
+      createdAt: new Date(Date.now() + 7 * 60 * 60 * 1000),
     },
   });
 
