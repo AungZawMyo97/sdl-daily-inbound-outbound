@@ -7,6 +7,7 @@ import { TransactionForm } from "@/components/transaction-form";
 import { TransactionList } from "@/components/transaction-list";
 import { TransactionEditDialog } from "@/components/transaction-edit-dialog";
 import { BalanceDisplay } from "@/components/balance-display";
+import { ReportDownload } from "@/components/report-download";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 
@@ -128,14 +129,25 @@ export default function TrackerPage() {
         <BalanceDisplay totalIn={totalIn} totalOut={totalOut} currency={currency} />
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-1 border-border/40">
-            <CardHeader>
-              <CardTitle className="text-base">New Transaction</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TransactionForm currency={currency} onSuccess={handleSuccess} />
-            </CardContent>
-          </Card>
+          <div className="lg:col-span-1 space-y-6">
+            <Card className="border-border/40">
+              <CardHeader>
+                <CardTitle className="text-base">New Transaction</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TransactionForm currency={currency} onSuccess={handleSuccess} />
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/40">
+              <CardHeader>
+                <CardTitle className="text-base">Monthly Report</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ReportDownload />
+              </CardContent>
+            </Card>
+          </div>
 
           <Card className="lg:col-span-2 border-border/40">
             <CardHeader>
