@@ -25,6 +25,7 @@ model Transaction {
   description String?
   date        DateTime        @default(now()) @db.Date
   createdAt   DateTime        @default(now())
+  bahtRefill  Boolean?        @default(false)
 
   @@index([currency])
   @@index([date])

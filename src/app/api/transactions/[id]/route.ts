@@ -4,7 +4,7 @@ import { Prisma, TransactionType } from "@/generated/prisma/client";
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getSession();
   if (!session) {
@@ -31,9 +31,16 @@ export async function DELETE(
   return Response.json({ success: true });
 }
 
+function parseLocalDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getSession();
   if (!session) {
@@ -54,21 +61,27 @@ export async function PATCH(
   }
 
   const body = await request.json();
-  const { amount, type, description, date } = body;
+  const { amount, type, description, date, bahtRefill } = body;
 
   const updateData: Prisma.TransactionUpdateInput = {};
 
   if (amount !== undefined) {
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      return Response.json({ error: "Amount must be a positive number" }, { status: 400 });
+      return Response.json(
+        { error: "Amount must be a positive number" },
+        { status: 400 },
+      );
     }
     updateData.amount = parsedAmount;
   }
 
   if (type !== undefined) {
     if (!Object.values(TransactionType).includes(type)) {
-      return Response.json({ error: "Invalid transaction type" }, { status: 400 });
+      return Response.json(
+        { error: "Invalid transaction type" },
+        { status: 400 },
+      );
     }
     updateData.type = type;
   }
@@ -78,9 +91,12 @@ export async function PATCH(
   }
 
   if (date !== undefined) {
-    const transactionDate = new Date(date);
-    transactionDate.setHours(0, 0, 0, 0);
+    const transactionDate = parseLocalDate(date);
     updateData.date = transactionDate;
+  }
+
+  if (bahtRefill !== undefined) {
+    updateData.bahtRefill = bahtRefill;
   }
 
   const updated = await prisma.transaction.update({

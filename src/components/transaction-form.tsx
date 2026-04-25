@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowDownLeft, ArrowUpRight, Loader2 } from "lucide-react";
 
 interface TransactionFormProps {
@@ -19,6 +20,7 @@ export function TransactionForm({ currency, onSuccess }: TransactionFormProps) {
     const now = new Date();
     return now.toISOString().split("T")[0];
   });
+  const [bahtRefill, setBahtRefill] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -31,7 +33,14 @@ export function TransactionForm({ currency, onSuccess }: TransactionFormProps) {
       const res = await fetch("/api/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, type, currency, description, date }),
+        body: JSON.stringify({
+          amount,
+          type,
+          currency,
+          description,
+          date,
+          bahtRefill,
+        }),
       });
 
       if (!res.ok) {
@@ -117,9 +126,18 @@ export function TransactionForm({ currency, onSuccess }: TransactionFormProps) {
         />
       </div>
 
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="bahtRefill"
+          checked={bahtRefill}
+          onCheckedChange={(checked) => setBahtRefill(checked as boolean)}
+        />
+        <Label htmlFor="bahtRefill" className="text-sm font-normal">
+          Baht Refill
+        </Label>
+      </div>
+
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       <Button
         type="submit"

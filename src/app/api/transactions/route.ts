@@ -3,6 +3,13 @@ import { getSession } from "@/lib/session";
 import { nowLocal } from "@/lib/timezone";
 import { Currency, TransactionType, Prisma } from "@/generated/prisma/client";
 
+function parseLocalDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
 export async function GET(request: Request) {
   const session = await getSession();
   if (!session) {
@@ -14,8 +21,12 @@ export async function GET(request: Request) {
   const dateStr = url.searchParams.get("date");
   const month = url.searchParams.get("month");
   const year = url.searchParams.get("year");
+  const bahtRefill = url.searchParams.get("bahtRefill");
   const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
-  const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get("limit") || "10", 10)));
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(url.searchParams.get("limit") || "10", 10)),
+  );
 
   const where: Record<string, unknown> = {};
 
@@ -23,8 +34,12 @@ export async function GET(request: Request) {
     where.currency = currency;
   }
 
+  if (bahtRefill === "true") {
+    where.bahtRefill = true;
+  }
+
   if (dateStr) {
-    const date = new Date(dateStr);
+    const date = parseLocalDate(dateStr);
     const nextDate = new Date(date);
     nextDate.setDate(nextDate.getDate() + 1);
     where.date = { gte: date, lt: nextDate };
@@ -42,10 +57,7 @@ export async function GET(request: Request) {
   const [transactions, totalCount, aggregates] = await Promise.all([
     prisma.transaction.findMany({
       where,
-      orderBy: [
-        { date: "desc" },
-        { createdAt: "desc" }
-      ],
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
       skip: (page - 1) * limit,
       take: limit,
     }),
@@ -57,12 +69,8 @@ export async function GET(request: Request) {
     }),
   ]);
 
-  const totalIn = aggregates
-    .find((a) => a.type === "IN")
-    ?._sum.amount;
-  const totalOut = aggregates
-    .find((a) => a.type === "OUT")
-    ?._sum.amount;
+  const totalIn = aggregates.find((a) => a.type === "IN")?._sum.amount;
+  const totalOut = aggregates.find((a) => a.type === "OUT")?._sum.amount;
 
   const serialized = transactions.map((t) => ({
     ...t,
@@ -87,17 +95,20 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { amount, type, currency, description, date } = body;
+  const { amount, type, currency, description, date, bahtRefill } = body;
 
   if (!amount || !type || !currency) {
     return Response.json(
       { error: "Amount, type, and currency are required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (!Object.values(TransactionType).includes(type)) {
-    return Response.json({ error: "Invalid transaction type" }, { status: 400 });
+    return Response.json(
+      { error: "Invalid transaction type" },
+      { status: 400 },
+    );
   }
 
   if (!Object.values(Currency).includes(currency)) {
@@ -106,10 +117,13 @@ export async function POST(request: Request) {
 
   const parsedAmount = parseFloat(amount);
   if (isNaN(parsedAmount) || parsedAmount <= 0) {
-    return Response.json({ error: "Amount must be a positive number" }, { status: 400 });
+    return Response.json(
+      { error: "Amount must be a positive number" },
+      { status: 400 },
+    );
   }
 
-  const transactionDate = date ? new Date(date) : nowLocal();
+  const transactionDate = date ? parseLocalDate(date) : nowLocal();
   transactionDate.setHours(0, 0, 0, 0);
 
   const transaction = await prisma.transaction.create({
@@ -119,14 +133,18 @@ export async function POST(request: Request) {
       currency,
       description: description || null,
       date: transactionDate,
+      bahtRefill: bahtRefill || false,
       createdAt: new Date(Date.now() + 7 * 60 * 60 * 1000),
     },
   });
 
-  return Response.json({
-    ...transaction,
-    amount: transaction.amount.toString(),
-    date: transaction.date.toISOString(),
-    createdAt: transaction.createdAt.toISOString(),
-  }, { status: 201 });
+  return Response.json(
+    {
+      ...transaction,
+      amount: transaction.amount.toString(),
+      date: transaction.date.toISOString(),
+      createdAt: transaction.createdAt.toISOString(),
+    },
+    { status: 201 },
+  );
 }

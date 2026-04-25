@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ interface Transaction {
   description: string | null;
   date: string;
   createdAt: string;
+  bahtRefill?: boolean;
 }
 
 interface TransactionEditDialogProps {
@@ -39,6 +41,7 @@ export function TransactionEditDialog({
   const [type, setType] = useState<"IN" | "OUT">("IN");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
+  const [bahtRefill, setBahtRefill] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -48,6 +51,7 @@ export function TransactionEditDialog({
       setType(transaction.type);
       setDescription(transaction.description || "");
       setDate(new Date(transaction.date).toISOString().split("T")[0]);
+      setBahtRefill(transaction.bahtRefill || false);
       setError("");
     }
   }, [transaction, isOpen]);
@@ -55,7 +59,7 @@ export function TransactionEditDialog({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!transaction) return;
-    
+
     setError("");
     setLoading(true);
 
@@ -63,7 +67,7 @@ export function TransactionEditDialog({
       const res = await fetch(`/api/transactions/${transaction.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, type, description, date }),
+        body: JSON.stringify({ amount, type, description, date, bahtRefill }),
       });
 
       if (!res.ok) {
@@ -156,6 +160,17 @@ export function TransactionEditDialog({
             />
           </div>
 
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="edit-bahtRefill"
+              checked={bahtRefill}
+              onCheckedChange={(checked) => setBahtRefill(checked as boolean)}
+            />
+            <Label htmlFor="edit-bahtRefill" className="text-sm font-normal">
+              Baht Refill
+            </Label>
+          </div>
+
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button
@@ -163,7 +178,11 @@ export function TransactionEditDialog({
             disabled={loading || !amount}
             className="w-full mt-4"
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Changes"}
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              "Save Changes"
+            )}
           </Button>
         </form>
       </DialogContent>

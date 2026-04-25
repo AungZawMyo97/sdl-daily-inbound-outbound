@@ -114,7 +114,10 @@ export default function DashboardPage() {
                   <BarChart3 className="h-5 w-5 text-emerald-400" />
                   Monthly Breakdown — {year}
                 </CardTitle>
-                <CurrencySwitcher value={tableCurrency} onChange={setTableCurrency} />
+                <CurrencySwitcher
+                  value={tableCurrency}
+                  onChange={setTableCurrency}
+                />
               </CardHeader>
               <CardContent>
                 <MonthlyTable data={data.monthly} currency={tableCurrency} />
