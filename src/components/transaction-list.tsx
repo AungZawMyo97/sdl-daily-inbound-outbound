@@ -1,7 +1,13 @@
 "use client";
 
 import { useRef, useEffect, useCallback } from "react";
-import { Trash2, ArrowDownLeft, ArrowUpRight, Pencil, Loader2 } from "lucide-react";
+import {
+  Trash2,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Pencil,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -38,10 +44,12 @@ interface TransactionListProps {
 function formatAmount(amount: string, currency: string): string {
   const num = parseFloat(amount);
   const isMMK = currency === "MMK";
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: isMMK ? 0 : 2,
-    maximumFractionDigits: isMMK ? 0 : 2,
-  }).format(num) + ` ${currency}`;
+  return (
+    new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: isMMK ? 0 : 2,
+      maximumFractionDigits: isMMK ? 0 : 2,
+    }).format(num) + ` ${currency}`
+  );
 }
 
 function formatDate(dateStr: string): string {
@@ -73,7 +81,7 @@ export function TransactionList({
         onLoadMore();
       }
     },
-    [hasMore, loadingMore, loading, onLoadMore]
+    [hasMore, loadingMore, loading, onLoadMore],
   );
 
   useEffect(() => {
@@ -119,11 +127,13 @@ export function TransactionList({
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-background">
             <TableRow className="bg-muted/30">
-              <TableHead className="w-[100px]">Type</TableHead>
+              <TableHead className="w-25">Type</TableHead>
               <TableHead>Amount</TableHead>
-              <TableHead className="hidden sm:table-cell">Description</TableHead>
+              <TableHead className="hidden sm:table-cell">
+                Description
+              </TableHead>
               <TableHead className="hidden sm:table-cell">Date</TableHead>
-              <TableHead className="w-[50px]" />
+              <TableHead className="w-12.5" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -150,8 +160,13 @@ export function TransactionList({
                   </Badge>
                 </TableCell>
                 <TableCell className="font-mono font-medium">
-                  <span className={tx.type === "IN" ? "text-emerald-400" : "text-rose-400"}>
-                    {tx.type === "IN" ? "+" : "-"}{formatAmount(tx.amount, tx.currency)}
+                  <span
+                    className={
+                      tx.type === "IN" ? "text-emerald-400" : "text-rose-400"
+                    }
+                  >
+                    {tx.type === "IN" ? "+" : "-"}
+                    {formatAmount(tx.amount, tx.currency)}
                   </span>
                 </TableCell>
                 <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">

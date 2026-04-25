@@ -28,4 +28,11 @@ export function currentYear(): number {
   return nowLocal().getFullYear();
 }
 
+/**
+ * Get the current month (1-12) in the app's local timezone.
+ */
+export function currentMonth(): number {
+  return nowLocal().getMonth() + 1;
+}
+
 export { APP_TIMEZONE };

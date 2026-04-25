@@ -21,7 +21,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { todayLocalDateString } from "@/lib/timezone";
+import {
+  todayLocalDateString,
+  currentMonth,
+  currentYear,
+} from "@/lib/timezone";
 
 interface Transaction {
   id: number;
@@ -47,6 +51,14 @@ export default function TrackerPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [totalIn, setTotalIn] = useState(0);
   const [totalOut, setTotalOut] = useState(0);
+  const [monthlyTotals, setMonthlyTotals] = useState({
+    mmkIn: 0,
+    mmkOut: 0,
+    mmkNet: 0,
+    thbIn: 0,
+    thbOut: 0,
+    thbNet: 0,
+  });
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
   const [refillDate, setRefillDate] = useState(todayLocalDateString());
@@ -126,6 +138,23 @@ export default function TrackerPage() {
     }
   }, []);
 
+  const fetchMonthlyTotals = useCallback(async () => {
+    try {
+      const today = new Date(todayLocalDateString());
+      const month = today.getMonth() + 1;
+      const year = today.getFullYear();
+      const res = await fetch(
+        `/api/transactions/monthly-summary?month=${month}&year=${year}`,
+      );
+      if (res.ok) {
+        const result = await res.json();
+        setMonthlyTotals(result.totals);
+      }
+    } catch {
+      toast.error("Failed to load monthly totals");
+    }
+  }, []);
+
   useEffect(() => {
     setPage(1);
     setTransactions([]);
@@ -142,6 +171,10 @@ export default function TrackerPage() {
     fetchBahtRefillTransactions(refillDate);
   }, [refillDate, fetchBahtRefillTransactions]);
 
+  useEffect(() => {
+    fetchMonthlyTotals();
+  }, [fetchMonthlyTotals]);
+
   function handleLoadMore() {
     const nextPage = page + 1;
     setPage(nextPage);
@@ -155,6 +188,7 @@ export default function TrackerPage() {
         toast.success("Transaction deleted");
         setPage(1);
         fetchTransactions(1, false);
+        fetchMonthlyTotals();
       } else {
         toast.error("Failed to delete transaction");
       }
@@ -170,6 +204,7 @@ export default function TrackerPage() {
     setTransactions([]);
     fetchTransactions(1, false, today);
     fetchBahtRefillTransactions(refillDateRef.current);
+    fetchMonthlyTotals();
     toast.success("Transaction added");
   }
 
@@ -178,6 +213,7 @@ export default function TrackerPage() {
     setPage(1);
     fetchTransactions(1, false);
     fetchBahtRefillTransactions(refillDateRef.current);
+    fetchMonthlyTotals();
   }
 
   return (
@@ -198,8 +234,12 @@ export default function TrackerPage() {
         </div>
 
         <BalanceDisplay
-          totalIn={totalIn}
-          totalOut={totalOut}
+          totalIn={
+            currency === "MMK" ? monthlyTotals.mmkIn : monthlyTotals.thbIn
+          }
+          totalOut={
+            currency === "MMK" ? monthlyTotals.mmkOut : monthlyTotals.thbOut
+          }
           currency={currency}
         />
 
