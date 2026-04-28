@@ -21,11 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import {
-  todayLocalDateString,
-  currentMonth,
-  currentYear,
-} from "@/lib/timezone";
+import { todayLocalDateString } from "@/lib/timezone";
 
 interface Transaction {
   id: number;
@@ -61,15 +57,11 @@ export default function TrackerPage() {
   });
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
-  const [refillDate, setRefillDate] = useState(todayLocalDateString());
   const [bahtRefillTransactions, setBahtRefillTransactions] = useState<
     Transaction[]
   >([]);
   const [bahtRefillLoading, setBahtRefillLoading] = useState(false);
   const [bahtRefillTotals, setBahtRefillTotals] = useState({ MMK: 0, THB: 0 });
-
-  const refillDateRef = useRef(refillDate);
-  refillDateRef.current = refillDate;
 
   const currencyRef = useRef(currency);
   currencyRef.current = currency;
@@ -109,10 +101,10 @@ export default function TrackerPage() {
     [],
   );
 
-  const fetchBahtRefillTransactions = useCallback(async (date: string) => {
+  const fetchBahtRefillTransactions = useCallback(async () => {
     setBahtRefillLoading(true);
     try {
-      const res = await fetch(`/api/transactions?date=${date}&bahtRefill=true`);
+      const res = await fetch("/api/transactions?bahtRefill=true");
       if (res.ok) {
         const result = await res.json();
         const mmkTotal = result.data
@@ -168,8 +160,8 @@ export default function TrackerPage() {
   }, [currency, fetchTransactions]);
 
   useEffect(() => {
-    fetchBahtRefillTransactions(refillDate);
-  }, [refillDate, fetchBahtRefillTransactions]);
+    fetchBahtRefillTransactions();
+  }, [fetchBahtRefillTransactions]);
 
   useEffect(() => {
     fetchMonthlyTotals();
@@ -188,6 +180,7 @@ export default function TrackerPage() {
         toast.success("Transaction deleted");
         setPage(1);
         fetchTransactions(1, false);
+        fetchBahtRefillTransactions();
         fetchMonthlyTotals();
       } else {
         toast.error("Failed to delete transaction");
@@ -203,7 +196,7 @@ export default function TrackerPage() {
     setPage(1);
     setTransactions([]);
     fetchTransactions(1, false, today);
-    fetchBahtRefillTransactions(refillDateRef.current);
+    fetchBahtRefillTransactions();
     fetchMonthlyTotals();
     toast.success("Transaction added");
   }
@@ -212,7 +205,7 @@ export default function TrackerPage() {
     toast.success("Transaction updated");
     setPage(1);
     fetchTransactions(1, false);
-    fetchBahtRefillTransactions(refillDateRef.current);
+    fetchBahtRefillTransactions();
     fetchMonthlyTotals();
   }
 
@@ -313,18 +306,8 @@ export default function TrackerPage() {
             <div>
               <CardTitle className="text-base">Baht Refill Summary</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Filter by refill date separately from tracker date
+                Showing all baht refill transactions for MMK and THB
               </p>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Label htmlFor="refill-date">Date</Label>
-              <Input
-                id="refill-date"
-                type="date"
-                value={refillDate}
-                onChange={(e) => setRefillDate(e.target.value)}
-                className="h-9 w-40"
-              />
             </div>
           </CardHeader>
           <CardContent>
