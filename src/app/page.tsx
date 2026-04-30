@@ -45,8 +45,8 @@ export default function TrackerPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
-  const [totalIn, setTotalIn] = useState(0);
-  const [totalOut, setTotalOut] = useState(0);
+  const [, setTotalIn] = useState(0);
+  const [, setTotalOut] = useState(0);
   const [monthlyTotals, setMonthlyTotals] = useState({
     mmkIn: 0,
     mmkOut: 0,
@@ -104,25 +104,33 @@ export default function TrackerPage() {
   const fetchBahtRefillTransactions = useCallback(async () => {
     setBahtRefillLoading(true);
     try {
-      const res = await fetch("/api/transactions?bahtRefill=true");
-      if (res.ok) {
-        const result = await res.json();
-        const mmkTotal = result.data
-          .filter((t: Transaction) => t.currency === "MMK")
-          .reduce(
-            (sum: number, t: Transaction) => sum + parseFloat(t.amount),
-            0,
-          );
-        const thbTotal = result.data
-          .filter((t: Transaction) => t.currency === "THB")
-          .reduce(
-            (sum: number, t: Transaction) => sum + parseFloat(t.amount),
-            0,
-          );
+      const allTransactions: Transaction[] = [];
+      let currentPage = 1;
+      let hasMore = true;
 
-        setBahtRefillTransactions(result.data);
-        setBahtRefillTotals({ MMK: mmkTotal, THB: thbTotal });
+      while (hasMore) {
+        const res = await fetch(
+          `/api/transactions?bahtRefill=true&page=${currentPage}&limit=100`,
+        );
+        if (!res.ok) {
+          throw new Error("Failed to fetch baht refill transactions");
+        }
+
+        const result = await res.json();
+        allTransactions.push(...result.data);
+        hasMore = result.hasMore;
+        currentPage += 1;
       }
+
+      const mmkTotal = allTransactions
+        .filter((t) => t.currency === "MMK")
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      const thbTotal = allTransactions
+        .filter((t) => t.currency === "THB")
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+      setBahtRefillTransactions(allTransactions);
+      setBahtRefillTotals({ MMK: mmkTotal, THB: thbTotal });
     } catch {
       toast.error("Failed to load baht refill transactions");
     } finally {
