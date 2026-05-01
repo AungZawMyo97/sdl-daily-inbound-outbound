@@ -55,6 +55,12 @@ export default function TrackerPage() {
     thbOut: 0,
     thbNet: 0,
   });
+  const [overallTotals, setOverallTotals] = useState({
+    mmkIn: 0,
+    mmkOut: 0,
+    thbIn: 0,
+    thbOut: 0,
+  });
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
   const [bahtRefillTransactions, setBahtRefillTransactions] = useState<
@@ -155,6 +161,29 @@ export default function TrackerPage() {
     }
   }, []);
 
+  const fetchOverallTotals = useCallback(async () => {
+    try {
+      const [mmkRes, thbRes] = await Promise.all([
+        fetch("/api/transactions?currency=MMK&page=1&limit=1"),
+        fetch("/api/transactions?currency=THB&page=1&limit=1"),
+      ]);
+      if (mmkRes.ok && thbRes.ok) {
+        const [mmkResult, thbResult] = await Promise.all([
+          mmkRes.json(),
+          thbRes.json(),
+        ]);
+        setOverallTotals({
+          mmkIn: mmkResult.totalIn ?? 0,
+          mmkOut: mmkResult.totalOut ?? 0,
+          thbIn: thbResult.totalIn ?? 0,
+          thbOut: thbResult.totalOut ?? 0,
+        });
+      }
+    } catch {
+      toast.error("Failed to load overall totals");
+    }
+  }, []);
+
   useEffect(() => {
     setPage(1);
     setTransactions([]);
@@ -175,6 +204,10 @@ export default function TrackerPage() {
     fetchMonthlyTotals();
   }, [fetchMonthlyTotals]);
 
+  useEffect(() => {
+    fetchOverallTotals();
+  }, [fetchOverallTotals]);
+
   function handleLoadMore() {
     const nextPage = page + 1;
     setPage(nextPage);
@@ -190,6 +223,7 @@ export default function TrackerPage() {
         fetchTransactions(1, false);
         fetchBahtRefillTransactions();
         fetchMonthlyTotals();
+        fetchOverallTotals();
       } else {
         toast.error("Failed to delete transaction");
       }
@@ -206,6 +240,7 @@ export default function TrackerPage() {
     fetchTransactions(1, false, today);
     fetchBahtRefillTransactions();
     fetchMonthlyTotals();
+    fetchOverallTotals();
     toast.success("Transaction added");
   }
 
@@ -215,6 +250,7 @@ export default function TrackerPage() {
     fetchTransactions(1, false);
     fetchBahtRefillTransactions();
     fetchMonthlyTotals();
+    fetchOverallTotals();
   }
 
   return (
@@ -240,6 +276,11 @@ export default function TrackerPage() {
           }
           totalOut={
             currency === "MMK" ? monthlyTotals.mmkOut : monthlyTotals.thbOut
+          }
+          overallNet={
+            currency === "MMK"
+              ? overallTotals.mmkIn - overallTotals.mmkOut
+              : overallTotals.thbIn - overallTotals.thbOut
           }
           currency={currency}
         />
