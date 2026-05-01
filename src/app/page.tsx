@@ -39,6 +39,9 @@ const PAGE_SIZE = 10;
 export default function TrackerPage() {
   const [currency, setCurrency] = useState<"MMK" | "THB">("MMK");
   const [selectedDate, setSelectedDate] = useState(todayLocalDateString());
+  const [refillMonth, setRefillMonth] = useState(
+    todayLocalDateString().slice(0, 7),
+  );
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -107,8 +110,7 @@ export default function TrackerPage() {
     [],
   );
 
-  const fetchBahtRefillTransactions = useCallback(async () => {
-    setBahtRefillLoading(true);
+  const fetchBahtRefillTotals = useCallback(async () => {
     try {
       const allTransactions: Transaction[] = [];
       let currentPage = 1;
@@ -119,7 +121,7 @@ export default function TrackerPage() {
           `/api/transactions?bahtRefill=true&page=${currentPage}&limit=100`,
         );
         if (!res.ok) {
-          throw new Error("Failed to fetch baht refill transactions");
+          throw new Error("Failed to fetch baht refill totals");
         }
 
         const result = await res.json();
@@ -135,14 +137,41 @@ export default function TrackerPage() {
         .filter((t) => t.currency === "THB")
         .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
-      setBahtRefillTransactions(allTransactions);
       setBahtRefillTotals({ MMK: mmkTotal, THB: thbTotal });
+    } catch {
+      toast.error("Failed to load baht refill totals");
+    }
+  }, []);
+
+  const fetchBahtRefillTransactions = useCallback(async () => {
+    setBahtRefillLoading(true);
+    try {
+      const monthlyTransactions: Transaction[] = [];
+      const [year, month] = refillMonth.split("-").map(Number);
+      let currentPage = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const res = await fetch(
+          `/api/transactions?bahtRefill=true&month=${month}&year=${year}&page=${currentPage}&limit=100`,
+        );
+        if (!res.ok) {
+          throw new Error("Failed to fetch baht refill transactions");
+        }
+
+        const result = await res.json();
+        monthlyTransactions.push(...result.data);
+        hasMore = result.hasMore;
+        currentPage += 1;
+      }
+
+      setBahtRefillTransactions(monthlyTransactions);
     } catch {
       toast.error("Failed to load baht refill transactions");
     } finally {
       setBahtRefillLoading(false);
     }
-  }, []);
+  }, [refillMonth]);
 
   const fetchMonthlyTotals = useCallback(async () => {
     try {
@@ -197,8 +226,12 @@ export default function TrackerPage() {
   }, [currency, fetchTransactions]);
 
   useEffect(() => {
+    fetchBahtRefillTotals();
+  }, [fetchBahtRefillTotals]);
+
+  useEffect(() => {
     fetchBahtRefillTransactions();
-  }, [fetchBahtRefillTransactions]);
+  }, [refillMonth, fetchBahtRefillTransactions]);
 
   useEffect(() => {
     fetchMonthlyTotals();
@@ -221,6 +254,7 @@ export default function TrackerPage() {
         toast.success("Transaction deleted");
         setPage(1);
         fetchTransactions(1, false);
+        fetchBahtRefillTotals();
         fetchBahtRefillTransactions();
         fetchMonthlyTotals();
         fetchOverallTotals();
@@ -238,6 +272,7 @@ export default function TrackerPage() {
     setPage(1);
     setTransactions([]);
     fetchTransactions(1, false, today);
+    fetchBahtRefillTotals();
     fetchBahtRefillTransactions();
     fetchMonthlyTotals();
     fetchOverallTotals();
@@ -248,6 +283,7 @@ export default function TrackerPage() {
     toast.success("Transaction updated");
     setPage(1);
     fetchTransactions(1, false);
+    fetchBahtRefillTotals();
     fetchBahtRefillTransactions();
     fetchMonthlyTotals();
     fetchOverallTotals();
@@ -355,8 +391,18 @@ export default function TrackerPage() {
             <div>
               <CardTitle className="text-base">Baht Refill Summary</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Showing all baht refill transactions for MMK and THB
+                Showing monthly baht refill transactions with overall totals
               </p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Label htmlFor="refill-month">Refill Month</Label>
+              <Input
+                id="refill-month"
+                type="month"
+                value={refillMonth}
+                onChange={(e) => setRefillMonth(e.target.value)}
+                className="h-9 w-44"
+              />
             </div>
           </CardHeader>
           <CardContent>

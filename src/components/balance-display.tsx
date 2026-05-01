@@ -24,14 +24,12 @@ export function BalanceDisplay({
   currency,
   overallNet,
 }: BalanceDisplayProps) {
-  const monthlyNet = totalIn - totalOut;
-  const isMonthlyPositive = monthlyNet >= 0;
   const hasOverallNet = typeof overallNet === "number";
   const isOverallPositive = (overallNet ?? 0) >= 0;
 
   return (
     <div
-      className={`grid grid-cols-1 gap-3 ${hasOverallNet ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}
+      className={`grid grid-cols-1 gap-3 ${hasOverallNet ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
     >
       <Card className="border-emerald-500/20 bg-emerald-500/5">
         <CardContent className="flex items-center gap-3 p-4">
@@ -57,21 +55,6 @@ export function BalanceDisplay({
             <p className="text-xs text-muted-foreground">Monthly Outbound</p>
             <p className="truncate font-mono text-lg font-bold text-rose-400">
               -{formatNumber(totalOut, currency)}
-              <span className="ml-1 text-xs font-normal text-muted-foreground">{currency}</span>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className={`${isMonthlyPositive ? "border-emerald-500/20 bg-emerald-500/5" : "border-rose-500/20 bg-rose-500/5"}`}>
-        <CardContent className="flex items-center gap-3 p-4">
-          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${isMonthlyPositive ? "bg-emerald-500/10" : "bg-rose-500/10"}`}>
-            <Wallet className={`h-5 w-5 ${isMonthlyPositive ? "text-emerald-400" : "text-rose-400"}`} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">Monthly Net Balance</p>
-            <p className={`truncate font-mono text-lg font-bold ${isMonthlyPositive ? "text-emerald-400" : "text-rose-400"}`}>
-              {isMonthlyPositive ? "+" : ""}{formatNumber(monthlyNet, currency)}
               <span className="ml-1 text-xs font-normal text-muted-foreground">{currency}</span>
             </p>
           </div>
