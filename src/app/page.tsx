@@ -110,39 +110,6 @@ export default function TrackerPage() {
     [],
   );
 
-  const fetchBahtRefillTotals = useCallback(async () => {
-    try {
-      const allTransactions: Transaction[] = [];
-      let currentPage = 1;
-      let hasMore = true;
-
-      while (hasMore) {
-        const res = await fetch(
-          `/api/transactions?bahtRefill=true&page=${currentPage}&limit=100`,
-        );
-        if (!res.ok) {
-          throw new Error("Failed to fetch baht refill totals");
-        }
-
-        const result = await res.json();
-        allTransactions.push(...result.data);
-        hasMore = result.hasMore;
-        currentPage += 1;
-      }
-
-      const mmkTotal = allTransactions
-        .filter((t) => t.currency === "MMK")
-        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-      const thbTotal = allTransactions
-        .filter((t) => t.currency === "THB")
-        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-
-      setBahtRefillTotals({ MMK: mmkTotal, THB: thbTotal });
-    } catch {
-      toast.error("Failed to load baht refill totals");
-    }
-  }, []);
-
   const fetchBahtRefillTransactions = useCallback(async () => {
     setBahtRefillLoading(true);
     try {
@@ -166,8 +133,16 @@ export default function TrackerPage() {
       }
 
       setBahtRefillTransactions(monthlyTransactions);
+      const mmkTotal = monthlyTransactions
+        .filter((t) => t.currency === "MMK")
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      const thbTotal = monthlyTransactions
+        .filter((t) => t.currency === "THB")
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      setBahtRefillTotals({ MMK: mmkTotal, THB: thbTotal });
     } catch {
       toast.error("Failed to load baht refill transactions");
+      setBahtRefillTotals({ MMK: 0, THB: 0 });
     } finally {
       setBahtRefillLoading(false);
     }
@@ -226,10 +201,6 @@ export default function TrackerPage() {
   }, [currency, fetchTransactions]);
 
   useEffect(() => {
-    fetchBahtRefillTotals();
-  }, [fetchBahtRefillTotals]);
-
-  useEffect(() => {
     fetchBahtRefillTransactions();
   }, [refillMonth, fetchBahtRefillTransactions]);
 
@@ -254,7 +225,6 @@ export default function TrackerPage() {
         toast.success("Transaction deleted");
         setPage(1);
         fetchTransactions(1, false);
-        fetchBahtRefillTotals();
         fetchBahtRefillTransactions();
         fetchMonthlyTotals();
         fetchOverallTotals();
@@ -272,7 +242,6 @@ export default function TrackerPage() {
     setPage(1);
     setTransactions([]);
     fetchTransactions(1, false, today);
-    fetchBahtRefillTotals();
     fetchBahtRefillTransactions();
     fetchMonthlyTotals();
     fetchOverallTotals();
@@ -283,7 +252,6 @@ export default function TrackerPage() {
     toast.success("Transaction updated");
     setPage(1);
     fetchTransactions(1, false);
-    fetchBahtRefillTotals();
     fetchBahtRefillTransactions();
     fetchMonthlyTotals();
     fetchOverallTotals();
