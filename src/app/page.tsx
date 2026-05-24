@@ -7,6 +7,8 @@ import { TransactionForm } from "@/components/transaction-form";
 import { TransactionList } from "@/components/transaction-list";
 import { TransactionEditDialog } from "@/components/transaction-edit-dialog";
 import { BalanceDisplay } from "@/components/balance-display";
+import { BahtFromCustomersCard } from "@/components/baht-from-customers-card";
+import { MonthSelector } from "@/components/month-selector";
 import { ReportDownload } from "@/components/report-download";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,6 +44,9 @@ export default function TrackerPage() {
   const [refillMonth, setRefillMonth] = useState(
     todayLocalDateString().slice(0, 7),
   );
+  const [customerBahtMonth, setCustomerBahtMonth] = useState(
+    todayLocalDateString().slice(0, 7),
+  );
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -71,6 +76,11 @@ export default function TrackerPage() {
   >([]);
   const [bahtRefillLoading, setBahtRefillLoading] = useState(false);
   const [bahtRefillTotals, setBahtRefillTotals] = useState({ MMK: 0, THB: 0 });
+  const [customerBahtLoading, setCustomerBahtLoading] = useState(false);
+  const [customerBahtTotals, setCustomerBahtTotals] = useState({
+    thbInbound: 0,
+    mmkOutbound: 0,
+  });
 
   const currencyRef = useRef(currency);
   currencyRef.current = currency;
@@ -148,6 +158,27 @@ export default function TrackerPage() {
     }
   }, [refillMonth]);
 
+  const fetchCustomerBahtSummary = useCallback(async () => {
+    setCustomerBahtLoading(true);
+    try {
+      const [year, month] = customerBahtMonth.split("-").map(Number);
+      const res = await fetch(
+        `/api/transactions/customer-baht-summary?month=${month}&year=${year}`,
+      );
+      if (!res.ok) {
+        throw new Error("Failed to fetch customer baht summary");
+      }
+
+      const result = await res.json();
+      setCustomerBahtTotals(result.totals);
+    } catch {
+      toast.error("Failed to load customer baht summary");
+      setCustomerBahtTotals({ thbInbound: 0, mmkOutbound: 0 });
+    } finally {
+      setCustomerBahtLoading(false);
+    }
+  }, [customerBahtMonth]);
+
   const fetchMonthlyTotals = useCallback(async () => {
     try {
       const today = new Date(todayLocalDateString());
@@ -205,6 +236,10 @@ export default function TrackerPage() {
   }, [refillMonth, fetchBahtRefillTransactions]);
 
   useEffect(() => {
+    fetchCustomerBahtSummary();
+  }, [customerBahtMonth, fetchCustomerBahtSummary]);
+
+  useEffect(() => {
     fetchMonthlyTotals();
   }, [fetchMonthlyTotals]);
 
@@ -226,6 +261,7 @@ export default function TrackerPage() {
         setPage(1);
         fetchTransactions(1, false);
         fetchBahtRefillTransactions();
+        fetchCustomerBahtSummary();
         fetchMonthlyTotals();
         fetchOverallTotals();
       } else {
@@ -243,6 +279,7 @@ export default function TrackerPage() {
     setTransactions([]);
     fetchTransactions(1, false, today);
     fetchBahtRefillTransactions();
+    fetchCustomerBahtSummary();
     fetchMonthlyTotals();
     fetchOverallTotals();
     toast.success("Transaction added");
@@ -253,6 +290,7 @@ export default function TrackerPage() {
     setPage(1);
     fetchTransactions(1, false);
     fetchBahtRefillTransactions();
+    fetchCustomerBahtSummary();
     fetchMonthlyTotals();
     fetchOverallTotals();
   }
@@ -354,7 +392,15 @@ export default function TrackerPage() {
           </Card>
         </div>
 
-        <Card className="border-border/40">
+        <BahtFromCustomersCard
+          thbInbound={customerBahtTotals.thbInbound}
+          mmkOutbound={customerBahtTotals.mmkOutbound}
+          monthValue={customerBahtMonth}
+          onMonthChange={setCustomerBahtMonth}
+          loading={customerBahtLoading}
+        />
+
+        <Card className="overflow-visible border-border/40">
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle className="text-base">Baht Refill Summary</CardTitle>
@@ -362,16 +408,12 @@ export default function TrackerPage() {
                 Showing monthly baht refill transactions with overall totals
               </p>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Label htmlFor="refill-month">Refill Month</Label>
-              <Input
-                id="refill-month"
-                type="month"
-                value={refillMonth}
-                onChange={(e) => setRefillMonth(e.target.value)}
-                className="h-9 w-44"
-              />
-            </div>
+            <MonthSelector
+              id="refill-month"
+              label="Refill Month"
+              value={refillMonth}
+              onChange={setRefillMonth}
+            />
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="MMK" className="w-full">
