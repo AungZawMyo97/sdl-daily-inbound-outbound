@@ -394,7 +394,6 @@ export default function TrackerPage() {
 
         <BahtFromCustomersCard
           thbInbound={customerBahtTotals.thbInbound}
-          mmkOutbound={customerBahtTotals.mmkOutbound}
           monthValue={customerBahtMonth}
           onMonthChange={setCustomerBahtMonth}
           loading={customerBahtLoading}
