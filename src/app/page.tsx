@@ -69,6 +69,10 @@ export default function TrackerPage() {
     thbIn: 0,
     thbOut: 0,
   });
+  const [yesterdayTotals, setYesterdayTotals] = useState({
+    mmkNet: 0,
+    thbNet: 0,
+  });
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
   const [bahtRefillTransactions, setBahtRefillTransactions] = useState<
@@ -219,6 +223,18 @@ export default function TrackerPage() {
     }
   }, []);
 
+  const fetchYesterdayTotals = useCallback(async () => {
+    try {
+      const res = await fetch("/api/transactions/yesterday-summary");
+      if (res.ok) {
+        const result = await res.json();
+        setYesterdayTotals(result.totals);
+      }
+    } catch {
+      toast.error("Failed to load yesterday's totals");
+    }
+  }, []);
+
   useEffect(() => {
     setPage(1);
     setTransactions([]);
@@ -247,6 +263,10 @@ export default function TrackerPage() {
     fetchOverallTotals();
   }, [fetchOverallTotals]);
 
+  useEffect(() => {
+    fetchYesterdayTotals();
+  }, [fetchYesterdayTotals]);
+
   function handleLoadMore() {
     const nextPage = page + 1;
     setPage(nextPage);
@@ -264,6 +284,7 @@ export default function TrackerPage() {
         fetchCustomerBahtSummary();
         fetchMonthlyTotals();
         fetchOverallTotals();
+        fetchYesterdayTotals();
       } else {
         toast.error("Failed to delete transaction");
       }
@@ -282,6 +303,7 @@ export default function TrackerPage() {
     fetchCustomerBahtSummary();
     fetchMonthlyTotals();
     fetchOverallTotals();
+    fetchYesterdayTotals();
     toast.success("Transaction added");
   }
 
@@ -293,6 +315,7 @@ export default function TrackerPage() {
     fetchCustomerBahtSummary();
     fetchMonthlyTotals();
     fetchOverallTotals();
+    fetchYesterdayTotals();
   }
 
   return (
@@ -318,6 +341,11 @@ export default function TrackerPage() {
           }
           totalOut={
             currency === "MMK" ? monthlyTotals.mmkOut : monthlyTotals.thbOut
+          }
+          yesterdayNet={
+            currency === "MMK"
+              ? yesterdayTotals.mmkNet
+              : yesterdayTotals.thbNet
           }
           overallNet={
             currency === "MMK"

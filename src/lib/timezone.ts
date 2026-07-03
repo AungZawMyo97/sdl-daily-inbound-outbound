@@ -35,4 +35,10 @@ export function currentMonth(): number {
   return nowLocal().getMonth() + 1;
 }
 
+export function startOfTodayLocal(): Date {
+  const local = nowLocal();
+  local.setHours(0, 0, 0, 0);
+  return local;
+}
+
 export { APP_TIMEZONE };

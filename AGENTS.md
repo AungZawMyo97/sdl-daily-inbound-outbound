@@ -23,9 +23,10 @@ SDL Daily Inbound-Outbound Tracker is a private Next.js application for tracking
 
 - Keep transaction aggregation logic in API routes or focused helpers, not inside UI components.
 - Preserve the existing session checks in every API route that reads or mutates transaction data.
-- Transaction dates are treated as local app dates; use helpers from `src/lib/timezone.ts` where current date/month/year defaults are needed.
+- Transaction dates are treated as local app dates; use helpers from `src/lib/timezone.ts` (e.g., `startOfTodayLocal()`) where current date/month/year/day boundary defaults are needed.
 - Amounts come from Prisma Decimal values and should be converted deliberately before returning JSON.
 - The `bahtRefill` field is nullable for compatibility with older rows. For customer-baht monthly totals, exclude only `bahtRefill: true`; include `false` and `null`.
+- Yesterday's balance summary is computed via `/api/transactions/yesterday-summary`, aggregating transactions prior to today's start date (`date: { lt: todayStart }`).
 
 ## UI Guidance
 
@@ -33,6 +34,7 @@ SDL Daily Inbound-Outbound Tracker is a private Next.js application for tracking
 - Keep operational screens compact and scan-friendly.
 - Use lucide icons where useful, but avoid decorative UI that does not improve workflow clarity.
 - Use `Skeleton` for loading states instead of visible loading text in metric cards.
+- `BalanceDisplay` dynamically adjusts layout grid based on active metric cards (Monthly Inbound, Monthly Outbound, Yesterday's Balance, Overall Net Balance).
 
 ## Verification
 
@@ -42,4 +44,5 @@ Before handing off changes, run:
 npm.cmd run lint
 npx.cmd tsc --noEmit
 ```
+
 
